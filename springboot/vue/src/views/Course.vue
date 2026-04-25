@@ -39,6 +39,7 @@
                 <el-button type="primary" @click="selectCourse(scope.row.id)" v-if="user.role === 'ROLE_STUDENT' ">选课</el-button>
                 <el-button type="primary" @click="handleShowStudent(scope.row.id) " v-if="user.role === 'ROLE_TEACHER' ">查看选课学生</el-button>
                 <el-button type="success" @click="handleEdit(scope.row)" v-if="user.role === 'ROLE_ADMIN'">编辑 <i class="el-icon-edit"></i></el-button>
+                <el-button type="warning" @click="viewComments(scope.row.id)">查看评价</el-button>
                 <el-popconfirm
                         class="ml-5"
                         confirm-button-text='确定'
@@ -88,8 +89,10 @@
                     prop="teacher"
                     label="教师名">
             </el-table-column>
-            <el-table-column>
+            <el-table-column label="操作" width="180" align="center">
                 <template slot-scope="scope">
+                  <!-- 新增评价按钮 -->
+                    <el-button type="primary" @click="handleComment(scope.row.id)">评价</el-button>
                     <el-button type="danger" @click="Withdrawal(scope.row.scId)">退课</el-button>
                 </template>
             </el-table-column>
@@ -152,6 +155,49 @@
             <el-button type="primary" @click="save">确 定</el-button>
         </div>
     </el-dialog>
+  <!-- 填写评价对话框 -->
+    <el-dialog title="课程评价" :visible.sync="commentDialogVisible" width="30%">
+      <el-form label-width="80px" size="small">
+        <el-form-item label="评分">
+          <el-rate v-model="commentForm.rate" style="margin-top: 10px"></el-rate>
+        </el-form-item>
+        <el-form-item label="内容">
+          <el-input type="textarea" v-model="commentForm.content"></el-input>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="commentDialogVisible = false">取 消</el-button>
+        <el-button type="primary" @click="submitComment">确 定</el-button>
+      </div>
+
+      <!-- 查看评价对话框 -->
+      <el-dialog title="课程评价列表" :visible.sync="commentListVisible" width="50%">
+        <el-table :data="comments" border stripe>
+          <el-table-column prop="nickname" label="评价人" width="120"></el-table-column>
+          <el-table-column prop="rate" label="评分" width="150">
+            <template slot-scope="scope">
+              <el-rate v-model="scope.row.rate" disabled></el-rate>
+            </template>
+          </el-table-column>
+          <el-table-column prop="content" label="评价内容"></el-table-column>
+          <el-table-column prop="time" label="评价时间" width="180"></el-table-column>
+        </el-table>
+      </el-dialog>
+    </el-dialog>
+
+  <!-- 查看评价对话框 -->
+  <el-dialog title="课程评价列表" :visible.sync="commentListVisible" width="50%">
+    <el-table :data="comments" border stripe>
+      <el-table-column prop="nickname" label="评价人" width="120"></el-table-column>
+      <el-table-column prop="rate" label="评分" width="150">
+        <template slot-scope="scope">
+          <el-rate v-model="scope.row.rate" disabled></el-rate>
+        </template>
+      </el-table-column>
+      <el-table-column prop="content" label="评价内容"></el-table-column>
+      <el-table-column prop="time" label="评价时间" width="180"></el-table-column>
+    </el-table>
+  </el-dialog>
 </div>
 </template>
 
@@ -177,7 +223,11 @@ export default {
             students: [],
             studentCourses: [],
             selectId: 0,
-            user: localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")) : {}
+            user: localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")) : {},
+            commentDialogVisible: false,
+            commentListVisible: false,
+            commentForm: {},
+            comments: [],
         }
     },
     created() {
@@ -325,7 +375,30 @@ export default {
                     this.$message.error("退课失败")
                 }
             })
-        }
+        },
+      // 在 Course.vue 的 methods 中增加
+      handleComment(courseId) {
+        this.commentForm = { courseId: courseId, rate: 5, content: '' }
+        this.commentDialogVisible = true
+      },
+      submitComment() {
+        this.request.post("/comment", this.commentForm).then(res => {
+          if (res.code === '200') {
+            this.$message.success("评价成功")
+            this.commentDialogVisible = false
+          } else {
+            this.$message.error(res.msg)
+          }
+        })
+      },
+      viewComments(courseId) {
+        this.request.get("/comment/tree/" + courseId).then(res => {
+          if (res.code === '200') {
+            this.comments = res.data
+            this.commentListVisible = true
+          }
+        })
+      }
     }
 }
 </script>
