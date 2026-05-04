@@ -158,7 +158,7 @@
   <!-- 填写评价对话框 -->
     <el-dialog title="课程评价" :visible.sync="commentDialogVisible" width="30%">
       <el-form label-width="80px" size="small">
-        <el-form-item label="评分">
+        <el-form-item label="评分" v-if="!commentForm.parentId">
           <el-rate v-model="commentForm.rate" style="margin-top: 10px"></el-rate>
         </el-form-item>
         <el-form-item label="内容">
@@ -185,18 +185,64 @@
       </el-dialog>
     </el-dialog>
 
-  <!-- 查看评价对话框 -->
+  <!-- 查看评价列表对话框 -->
   <el-dialog title="课程评价列表" :visible.sync="commentListVisible" width="50%">
-    <el-table :data="comments" border stripe>
-      <el-table-column prop="nickname" label="评价人" width="120"></el-table-column>
-      <el-table-column prop="rate" label="评分" width="150">
-        <template slot-scope="scope">
-          <el-rate v-model="scope.row.rate" disabled></el-rate>
-        </template>
-      </el-table-column>
-      <el-table-column prop="content" label="评价内容"></el-table-column>
-      <el-table-column prop="time" label="评价时间" width="180"></el-table-column>
-    </el-table>
+    <div style="max-height: 500px; overflow-y: auto;"> <!-- 增加滚动条 -->
+      <div v-for="item in comments" :key="item.id" style="border-bottom: 1px solid #eee; padding: 15px 0;">
+
+        <!-- 一级评论布局 -->
+        <div style="display: flex;">
+          <div style="width: 50px;">
+            <el-avatar :size="40" :src="item.avatarUrl"></el-avatar>
+          </div>
+          <div style="flex: 1; margin-left: 10px;">
+            <div style="display: flex; justify-content: space-between;">
+              <b style="color: #333">{{ item.nickname }}</b>
+              <span style="color: #999; font-size: 12px">{{ item.time }}</span>
+            </div>
+            <div style="margin-top: 5px">
+              <el-rate v-model="item.rate" disabled></el-rate>
+            </div>
+            <div style="margin-top: 10px; color: #444; line-height: 22px;">{{ item.content }}</div>
+            <!-- 在“回复”按钮所在位置的下方添加 -->
+            <div style="margin-top: 10px">
+              <el-button type="text" size="mini" @click="handleReplyInline(item)">回复</el-button>
+
+              <!-- 内联回复框：只有当 replyCommentId 等于当前评论 ID 时才显示 -->
+              <div v-if="replyCommentId === item.id" style="margin-top: 10px; background: #fff; padding: 10px; border: 1px solid #dcdfe6; border-radius: 4px;">
+                <el-input
+                    type="textarea"
+                    :rows="2"
+                    placeholder="请输入回复内容..."
+                    v-model="replyContent">
+                </el-input>
+                <div style="margin-top: 10px; text-align: right;">
+                  <el-button size="mini" @click="replyCommentId = null">取消</el-button>
+                  <el-button size="mini" type="primary" @click="doReply(item)">提交回复</el-button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 子评论（回复）布局：通过缩进和背景色区分 -->
+            <div v-if="item.children && item.children.length" style="margin-top: 15px; background-color: #f9f9f9; padding: 10px; border-radius: 5px;">
+              <div v-for="sub in item.children" :key="sub.id" style="margin-bottom: 10px; border-bottom: 1px dashed #ddd; padding-bottom: 5px;">
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="color: #409EFF; font-weight: bold;">{{ sub.nickname }}：</span>
+                  <span style="color: #999; font-size: 11px">{{ sub.time }}</span>
+                </div>
+                <div style="margin-top: 5px; color: #666;">{{ sub.content }}</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+      <!-- 无评论时的占位提示 -->
+      <div v-if="comments.length === 0" style="text-align: center; color: #999; padding: 20px;">
+        暂无评价，快来抢沙发吧~
+      </div>
+    </div>
   </el-dialog>
 </div>
 </template>
@@ -228,6 +274,8 @@ export default {
             commentListVisible: false,
             commentForm: {},
             comments: [],
+            replyCommentId: null, // 记录当前点开了哪条评论的回复框
+            replyContent: "",     // 临时存储回复框输入的文字
         }
     },
     created() {
@@ -396,6 +444,45 @@ export default {
           if (res.code === '200') {
             this.comments = res.data
             this.commentListVisible = true
+          }
+        })
+      },
+      // 在 viewComments 方法之后添加
+      handleReply(row) {
+        this.commentForm = {
+          courseId: row.courseId,
+          parentId: row.id,  // 绑定父级ID
+          originId: row.originId || row.id, // 绑定根ID
+          content: ''
+        }
+        this.commentDialogVisible = true // 弹出评论框
+      },
+      // 1. 点击“回复”按钮时触发：不再弹窗，而是显示内联输入框
+      handleReplyInline(row) {
+        this.replyCommentId = row.id // 标记当前要回复这一行
+        this.replyContent = ""       // 清空之前可能写过的内容
+      },
+
+// 2. 执行真正的回复提交
+      doReply(row) {
+        if (!this.replyContent) {
+          this.$message.warning("请输入回复内容")
+          return
+        }
+        const data = {
+          courseId: row.courseId,
+          parentId: row.id,             // 绑定父级 ID
+          originId: row.originId || row.id, // 绑定根 ID
+          content: this.replyContent
+        }
+        this.request.post("/comment", data).then(res => {
+          if (res.code === '200') {
+            this.$message.success("回复成功")
+            this.replyCommentId = null // 隐藏输入框
+            this.replyContent = ""      // 清空文字
+            this.viewComments(row.courseId) // 重新刷新列表，看到新回复
+          } else {
+            this.$message.error(res.msg)
           }
         })
       }
