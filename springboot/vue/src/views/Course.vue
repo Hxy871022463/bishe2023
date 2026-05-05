@@ -187,7 +187,7 @@
 
   <!-- 查看评价列表对话框 -->
   <el-dialog title="课程评价列表" :visible.sync="commentListVisible" width="50%">
-    <div style="max-height: 500px; overflow-y: auto;"> <!-- 增加滚动条 -->
+    <div style="max-height: 400px; overflow-y: auto; padding-right: 10px;"> <!-- 增加滚动条 -->
       <div v-for="item in comments" :key="item.id" style="border-bottom: 1px solid #eee; padding: 15px 0;">
 
         <!-- 一级评论布局 -->
@@ -223,15 +223,30 @@
               </div>
             </div>
 
-            <!-- 子评论（回复）布局：通过缩进和背景色区分 -->
+            <!-- 子评论（回复）布局 -->
             <div v-if="item.children && item.children.length" style="margin-top: 15px; background-color: #f9f9f9; padding: 10px; border-radius: 5px;">
-              <div v-for="sub in item.children" :key="sub.id" style="margin-bottom: 10px; border-bottom: 1px dashed #ddd; padding-bottom: 5px;">
-                <div style="display: flex; justify-content: space-between;">
-                  <span style="color: #409EFF; font-weight: bold;">{{ sub.nickname }}：</span>
-                  <span style="color: #999; font-size: 11px">{{ sub.time }}</span>
+
+              <!-- 遍历子评论 -->
+              <div v-for="(sub, index) in item.children" :key="sub.id">
+                <!-- 逻辑：只显示前 2 条，或者当 ID 在展开列表中时显示全部 -->
+                <div v-if="index < 2 || expandedCommentIds.includes(item.id)"
+                     style="margin-bottom: 10px; border-bottom: 1px dashed #ddd; padding-bottom: 5px;">
+                  <div style="display: flex; justify-content: space-between;">
+                    <span style="color: #409EFF; font-weight: bold;">{{ sub.nickname }}：</span>
+                    <span style="color: #999; font-size: 11px">{{ sub.time }}</span>
+                  </div>
+                  <div style="margin-top: 5px; color: #666;">{{ sub.content }}</div>
                 </div>
-                <div style="margin-top: 5px; color: #666;">{{ sub.content }}</div>
               </div>
+
+              <!-- 展开/折叠按钮：仅当子评论超过 2 条时显示 -->
+              <div v-if="item.children.length > 2" style="text-align: center; margin-top: 5px;">
+                <el-button type="text" size="mini" @click="toggleExpand(item.id)" style="color: #909399">
+                  {{ expandedCommentIds.includes(item.id) ? '收起回复' : '展开更多回复 (' + item.children.length + '条)' }}
+                  <i :class="expandedCommentIds.includes(item.id) ? 'el-icon-arrow-up' : 'el-icon-arrow-down'"></i>
+                </el-button>
+              </div>
+
             </div>
 
           </div>
@@ -276,6 +291,7 @@ export default {
             comments: [],
             replyCommentId: null, // 记录当前点开了哪条评论的回复框
             replyContent: "",     // 临时存储回复框输入的文字
+            expandedCommentIds: [], // 记录哪些父评论的子评论是展开状态
         }
     },
     created() {
@@ -485,7 +501,15 @@ export default {
             this.$message.error(res.msg)
           }
         })
-      }
+      },
+        toggleExpand(id) {
+          const index = this.expandedCommentIds.indexOf(id);
+          if (index > -1) {
+          this.expandedCommentIds.splice(index, 1); // 如果已展开，则移除（折叠）
+          } else {
+          this.expandedCommentIds.push(id); // 如果未展开，则添加（展开）
+        }
+      },
     }
 }
 </script>
