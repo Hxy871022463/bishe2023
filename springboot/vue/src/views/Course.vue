@@ -456,6 +456,8 @@ export default {
         })
       },
       viewComments(courseId) {
+        this.expandedCommentIds = [];
+
         this.request.get("/comment/tree/" + courseId).then(res => {
           if (res.code === '200') {
             this.comments = res.data
