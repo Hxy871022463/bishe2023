@@ -303,7 +303,7 @@ export default {
                 if (res.code === '200') {
                     this.$message.success("选课成功")
                 } else {
-                    this.$message.success(res.msg)
+                    this.$message.error(res.msg)
                 }
             })
         },

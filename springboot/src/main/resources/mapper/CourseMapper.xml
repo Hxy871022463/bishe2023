@@ -15,6 +15,10 @@
         insert into student_course(student_id, course_id) values(#{studentId}, #{courseId})
     </insert>
 
+    <select id="countStudentCourse" resultType="java.lang.Integer">
+        select count(*) from student_course where student_id = #{studentId} and course_id = #{courseId}
+    </select>
+
     <select id="findPage" resultType="com.example.springboot.entity.Course">
         select course.*, sys_user.nickname as teacher  from course
         left join sys_user

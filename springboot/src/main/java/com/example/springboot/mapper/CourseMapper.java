@@ -16,6 +16,8 @@ public interface CourseMapper extends BaseMapper<Course> {
 
     void setStudentCourse(@Param("courseId")Integer courseId, @Param("studentId") Integer studentId);
 
+    Integer countStudentCourse(@Param("courseId")Integer courseId, @Param("studentId") Integer studentId);
+
     Page<User> findStudentPage(Page<User> page, @Param("courseId") Integer id);
 
     List<Course> getCourseListByStudentId(@Param("studentId")Integer studentId);
