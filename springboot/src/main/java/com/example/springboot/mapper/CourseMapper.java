@@ -23,4 +23,10 @@ public interface CourseMapper extends BaseMapper<Course> {
     List<Course> getCourseListByStudentId(@Param("studentId")Integer studentId);
 
     void deleteRecordById(@Param("id")Integer id);
+
+    Course selectCourseByScId(@Param("scId") Integer scId);
+
+    int incrementEnrolled(@Param("courseId") Integer courseId);
+
+    int decrementEnrolled(@Param("courseId") Integer courseId);
 }

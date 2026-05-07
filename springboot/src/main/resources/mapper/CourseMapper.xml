@@ -28,8 +28,7 @@
     </select>
 
     <select id="findPage" resultType="com.example.springboot.entity.Course">
-        select course.*, sys_user.nickname as teacher,
-        (select count(*) from student_course where course_id = course.id) as enrolled
+        select course.*, sys_user.nickname as teacher
         from course
         left join sys_user
         on course.teacher_id = sys_user.id
@@ -39,6 +38,23 @@
             </if>
         </where>
     </select>
+
+    <update id="incrementEnrolled">
+        update course set enrolled = enrolled + 1
+        where id = #{courseId} and (capacity is null or enrolled &lt; capacity)
+    </update>
+
+    <update id="decrementEnrolled">
+        update course set enrolled = enrolled - 1
+        where id = #{courseId} and enrolled > 0
+    </update>
+
+    <select id="selectCourseByScId" resultType="com.example.springboot.entity.Course">
+        select course.* from student_course
+        left join course on student_course.course_id = course.id
+        where student_course.id = #{scId}
+    </select>
+
     <select id="findStudentPage" resultType="com.example.springboot.entity.User" >
         select sys_user.username, sys_user.nickname, sys_user.email, sys_user.phone from course
         left join student_course
