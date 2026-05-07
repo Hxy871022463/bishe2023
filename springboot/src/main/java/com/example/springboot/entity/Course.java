@@ -37,10 +37,16 @@ public class Course implements Serializable {
     @ApiModelProperty("授课老师id")
     private Integer teacherId;
 
+    @ApiModelProperty("课程容量")
+    private Integer capacity;
+
     @TableField(exist = false)
     private String teacher;
 
     @TableField(exist = false)
     private Integer scId;
+
+    @TableField(exist = false)
+    private Integer enrolled;
 
 }

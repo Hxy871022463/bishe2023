@@ -16,11 +16,21 @@
     </insert>
 
     <select id="countStudentCourse" resultType="java.lang.Integer">
-        select count(*) from student_course where student_id = #{studentId} and course_id = #{courseId}
+        select count(*) from student_course
+        <where>
+            <if test="studentId != null">
+                and student_id = #{studentId}
+            </if>
+            <if test="courseId != null">
+                and course_id = #{courseId}
+            </if>
+        </where>
     </select>
 
     <select id="findPage" resultType="com.example.springboot.entity.Course">
-        select course.*, sys_user.nickname as teacher  from course
+        select course.*, sys_user.nickname as teacher,
+        (select count(*) from student_course where course_id = course.id) as enrolled
+        from course
         left join sys_user
         on course.teacher_id = sys_user.id
         <where>

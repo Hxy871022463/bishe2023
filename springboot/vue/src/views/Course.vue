@@ -28,6 +28,11 @@
         <el-table-column prop="score" label="学分"></el-table-column>
         <el-table-column prop="times" label="课时"></el-table-column>
         <el-table-column prop="teacher" label="授课老师"></el-table-column>
+        <el-table-column label="容量/已选" width="100">
+            <template slot-scope="scope">
+                <span>{{ scope.row.enrolled || 0 }} / {{ scope.row.capacity || '∞' }}</span>
+            </template>
+        </el-table-column>
         <el-table-column label="启用" v-if="user.role === 'ROLE_ADMIN'">
             <template slot-scope="scope">
                 <el-switch v-model="scope.row.state" active-color="#13ce66" inactive-color="#ccc"
@@ -143,6 +148,9 @@
             </el-form-item>
             <el-form-item label="课时">
                 <el-input v-model="form.times" autocomplete="off"></el-input>
+            </el-form-item>
+            <el-form-item label="容量">
+                <el-input v-model="form.capacity" autocomplete="off" placeholder="不填则为不限量"></el-input>
             </el-form-item>
             <el-form-item label="老师">
                 <el-select clearable v-model="form.teacherId" placeholder="请选择">
@@ -302,6 +310,7 @@ export default {
             this.request.post('/course/studentCourse/' + courseId + "/" + this.user.id).then(res => {
                 if (res.code === '200') {
                     this.$message.success("选课成功")
+                    this.load() // 刷新主表格数据，更新“已选人数”
                 } else {
                     this.$message.error(res.msg)
                 }
@@ -435,6 +444,7 @@ export default {
                 if (res.code === '200') {
                     this.$message.success("退课成功")
                     this.getSelectedCourseList()
+                    this.load() // 同时刷新主表格数据，更新“已选人数”
                 } else {
                     this.$message.error("退课失败")
                 }
