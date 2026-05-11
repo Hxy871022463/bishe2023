@@ -102,7 +102,17 @@ public class UserService extends ServiceImpl<UserMapper, User> {
     }
 
     public Page<User> findPage(Page<User> page, String username, String email, String address) {
-        return userMapper.findPage(page, username, email, address);
+        Page<User> userPage = userMapper.findPage(page, username, email, address);
+        List<User> users = userPage.getRecords();
+        for (User user : users) {
+            if ("ROLE_TEACHER".equals(user.getRole())) {
+                user.setCourses(userMapper.findTeacherCourses(user.getId()));
+            }
+            if ("ROLE_STUDENT".equals(user.getRole())) {
+                user.setStuCourses(userMapper.findStudentCourses(user.getId()));
+            }
+        }
+        return userPage;
     }
 
     public void addUser(User user){

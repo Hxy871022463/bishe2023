@@ -57,6 +57,9 @@ public class User implements Serializable {
     @ApiModelProperty("角色")
     private String role;
 
+    @ApiModelProperty("最高可选学分")
+    private Integer maxScore;
+
     @TableField(exist = false)
     private List<Course> courses;
 

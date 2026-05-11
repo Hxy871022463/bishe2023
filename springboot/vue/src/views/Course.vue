@@ -1,5 +1,14 @@
 <template>
 <div>
+    <div style="margin: 10px 0" v-if="user.role === 'ROLE_STUDENT'">
+        <el-alert
+                :title="'学分看板：已选 ' + creditInfo.currentScore + ' / ' + (creditInfo.maxScore ? creditInfo.maxScore : '不限') + ' 学分'"
+                type="success"
+                :closable="false"
+                show-icon
+                style="margin-bottom: 10px">
+        </el-alert>
+    </div>
     <div style="margin: 10px 0">
         <el-input style="width: 200px" placeholder="请输入名称" suffix-icon="el-icon-search" v-model="name"></el-input>
         <el-button class="ml-5" type="primary" @click="load">搜索</el-button>
@@ -300,17 +309,29 @@ export default {
             replyCommentId: null, // 记录当前点开了哪条评论的回复框
             replyContent: "",     // 临时存储回复框输入的文字
             expandedCommentIds: [], // 记录哪些父评论的子评论是展开状态
+            creditInfo: { currentScore: 0, maxScore: null }, // 学分看板信息
         }
     },
     created() {
         this.load()
+        this.loadCreditInfo()
     },
     methods: {
+        loadCreditInfo() {
+            if (this.user.role === 'ROLE_STUDENT') {
+                this.request.get("/course/student/creditInfo/" + this.user.id).then(res => {
+                    if (res.code === '200') {
+                        this.creditInfo = res.data
+                    }
+                })
+            }
+        },
         selectCourse(courseId) {
             this.request.post('/course/studentCourse/' + courseId + "/" + this.user.id).then(res => {
                 if (res.code === '200') {
                     this.$message.success("选课成功")
-                    this.load() // 刷新主表格数据，更新“已选人数”
+                    this.load() // 刷新主表格数据，更新"已选人数"
+                    this.loadCreditInfo() // 刷新学分看板
                 } else {
                     this.$message.error(res.msg)
                 }
@@ -444,7 +465,8 @@ export default {
                 if (res.code === '200') {
                     this.$message.success("退课成功")
                     this.getSelectedCourseList()
-                    this.load() // 同时刷新主表格数据，更新“已选人数”
+                    this.load() // 同时刷新主表格数据，更新"已选人数"
+                    this.loadCreditInfo() // 刷新学分看板
                 } else {
                     this.$message.error("退课失败")
                 }

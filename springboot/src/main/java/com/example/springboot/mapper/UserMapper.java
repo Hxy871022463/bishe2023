@@ -34,4 +34,7 @@ public interface UserMapper extends BaseMapper<User> {
 int updatePassword(UserPasswordDTO userPasswordDTO);
 
     Page<User> findPage(Page<User> page, @Param("username") String username, @Param("email") String email, @Param("address") String address);
+
+    List<com.example.springboot.entity.Course> findStudentCourses(@Param("userId") Integer userId);
+    List<com.example.springboot.entity.Course> findTeacherCourses(@Param("userId") Integer userId);
 }

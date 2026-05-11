@@ -24,7 +24,7 @@ public class CourseController {
     // 新增或者更新
     @PostMapping
     public Result save(@RequestBody Course course) {
-        courseService.saveOrUpdate(course);
+        courseService.saveCourse(course);
         return Result.success();
     }
 
@@ -36,13 +36,13 @@ public class CourseController {
 
     @DeleteMapping("/{id}")
     public Result delete(@PathVariable Integer id) {
-        courseService.removeById(id);
+        courseService.deleteCourse(id);
         return Result.success();
     }
 
     @PostMapping("/del/batch")
     public Result deleteBatch(@RequestBody List<Integer> ids) {
-        courseService.removeByIds(ids);
+        courseService.deleteCourseBatch(ids);
         return Result.success();
     }
 
@@ -90,5 +90,10 @@ public class CourseController {
     public Result exitCourse(@PathVariable Integer id){
         courseService.removeStudentCourseRecord(id);
         return Result.success();
+    }
+
+    @GetMapping("/student/creditInfo/{id}")
+    public Result getCreditInfo(@PathVariable Integer id){
+        return Result.success(courseService.getStudentCreditInfo(id));
     }
 }
