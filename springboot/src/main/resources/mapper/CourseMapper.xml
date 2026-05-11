@@ -55,6 +55,10 @@
         where student_course.id = #{scId}
     </select>
 
+    <select id="selectStudentIdByScId" resultType="java.lang.Integer">
+        select student_id from student_course where id = #{scId}
+    </select>
+
     <select id="findStudentPage" resultType="com.example.springboot.entity.User" >
         select sys_user.username, sys_user.nickname, sys_user.email, sys_user.phone from course
         left join student_course
