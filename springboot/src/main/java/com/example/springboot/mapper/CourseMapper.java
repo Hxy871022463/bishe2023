@@ -29,4 +29,8 @@ public interface CourseMapper extends BaseMapper<Course> {
     int incrementEnrolled(@Param("courseId") Integer courseId);
 
     int decrementEnrolled(@Param("courseId") Integer courseId);
+
+    Integer sumScoreByStudentId(@Param("studentId") Integer studentId);
+
+    Integer selectStudentIdByScId(@Param("scId") Integer scId);
 }

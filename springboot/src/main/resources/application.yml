@@ -10,7 +10,7 @@ spring:
   redis:
     host: localhost
     port: 6379
-    database: 0
+    database: 1
 mybatis:
   mapper-locations: classpath:mapper/*.xml  #去扫描所有mybatis的xml文件
 #  configuration:
