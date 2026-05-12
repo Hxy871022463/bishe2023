@@ -31,6 +31,16 @@ public class CourseService extends ServiceImpl<CourseMapper, Course> {
     private static final String COURSE_STUDENT_KEY = "course:students:";
     private static final String STUDENT_SCORE_KEY = "student:score:";
 
+
+    // 缓存键常量（建议在类顶部定义或引入）
+    // COURSE_STOCK_KEY: 课程库存 (String类型)
+    // STUDENT_SCORE_KEY: 学生当前已选总学分 (String类型)
+    // COURSE_STUDENT_KEY: 课程已选学生集合 (Set类型，用于防重)
+
+    /**
+     * 系统启动预热：将数据库中的关键数据同步至 Redis 缓存。
+     * 避免高并发抢课初期出现“缓存穿透”与“缓存击穿”。
+     */
     @PostConstruct
     public void init() {
         List<Course> list = list();
@@ -47,6 +57,10 @@ public class CourseService extends ServiceImpl<CourseMapper, Course> {
         }
     }
 
+    /**
+     * 新增或更新课程信息
+     * 采用“先写数据库，再写缓存”的策略，保证管理端修改后，抢课端能实时感知库存变化。
+     */
     @Transactional
     public void saveCourse(Course course) {
         saveOrUpdate(course);
@@ -60,6 +74,7 @@ public class CourseService extends ServiceImpl<CourseMapper, Course> {
         }
     }
 
+    // 批量删除课程
     @Transactional
     public void deleteCourseBatch(List<Integer> ids) {
         for (Integer id : ids) {
@@ -67,6 +82,10 @@ public class CourseService extends ServiceImpl<CourseMapper, Course> {
         }
     }
 
+    /**
+     * 删除单门课程
+     * 级联删除数据库记录与对应的 Redis 缓存（库存缓存与学生抢课防重 Set）
+     */
     @Transactional
     public void deleteCourse(Integer id) {
         removeById(id);
@@ -74,10 +93,20 @@ public class CourseService extends ServiceImpl<CourseMapper, Course> {
         stringRedisTemplate.delete(COURSE_STUDENT_KEY + id);
     }
 
+    /**
+     * 分页查询课程列表（直接走数据库，适用于非核心高并发的管理端或列表页）
+     */
     public Page<Course> findPage(Page<Course> page, String name) {
         return courseMapper.findPage(page, name);
     }
 
+    /**
+     * 核心业务：高并发抢课/选课逻辑
+     * 核心拦截顺序：1.Redis防重 -> 2.基础校验 -> 3.Redis学分校验 -> 4.Redis预减库存 -> 5.DB乐观锁更新
+     *
+     * @param courseId 课程ID
+     * @param studentId 学生ID
+     */
     @Transactional
     public void setStudentCourse(Integer courseId, Integer studentId) {
         Boolean isMember = stringRedisTemplate.opsForSet().isMember(COURSE_STUDENT_KEY + courseId, studentId.toString());
@@ -130,15 +159,26 @@ public class CourseService extends ServiceImpl<CourseMapper, Course> {
         }
     }
 
+    /**
+     * 查询某门课程的学生列表（分页）
+     */
     @Transactional
     public Page<User> getStudentList(Page<User> page, Integer courseId){
         return courseMapper.findStudentPage(page,courseId);
     }
 
+    /**
+     * 获取某个学生已选的课程列表
+     */
     public List<Course> getCourseList (Integer studentId){
         return courseMapper.getCourseListByStudentId(studentId);
     }
 
+    /**
+     * 取消选课 / 退课逻辑
+     * 与抢课相反，属于逆向操作：扣减数据库已选人数 -> 归还 Redis 库存 -> 扣减 Redis 学分 -> 移出防重集合 -> 删除关系记录
+     * * @param id 选课关系表的主键ID
+     */
     @Transactional
     public void removeStudentCourseRecord(Integer id){
         Course course = courseMapper.selectCourseByScId(id);
@@ -155,6 +195,9 @@ public class CourseService extends ServiceImpl<CourseMapper, Course> {
         courseMapper.deleteRecordById(id);
     }
 
+    /**
+     * 获取学生当前的学分信息（优先从 Redis 缓存获取当前学分，结合 DB 获取最大允许学分）
+     */
     public java.util.Map<String, Object> getStudentCreditInfo(Integer studentId) {
         User student = userService.getById(studentId);
         String scoreKey = STUDENT_SCORE_KEY + studentId;
