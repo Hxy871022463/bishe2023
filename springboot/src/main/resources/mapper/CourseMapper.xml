@@ -82,4 +82,38 @@
         select student_id from student_course
         where id = #{scId}
     </select>
+
+    <select id="findHotCourses" resultType="com.example.springboot.entity.Course">
+        select course.*, sys_user.nickname as teacher 
+        from course
+        left join sys_user on course.teacher_id = sys_user.id
+        order by course.enrolled desc
+        limit 10
+    </select>
+
+    <select id="findRateDistribution" resultType="java.util.HashMap">
+        select rate as rate, count(*) as count
+        from sys_comment
+        <where>
+            <if test="courseId != null">
+                and course_id = #{courseId}
+            </if>
+        </where>
+        group by rate
+        order by rate desc
+    </select>
+
+    <select id="findCourseSaturation" resultType="java.util.HashMap">
+        select course.id, course.name, course.enrolled, course.capacity,
+        sys_user.nickname as teacher,
+        case 
+            when course.capacity is null then 0
+            when course.capacity = 0 then 100
+            when course.enrolled is null then 0
+            else round((course.enrolled * 100.0 / course.capacity), 2)
+        end as saturation
+        from course
+        left join sys_user on course.teacher_id = sys_user.id
+        order by saturation desc
+    </select>
 </mapper>

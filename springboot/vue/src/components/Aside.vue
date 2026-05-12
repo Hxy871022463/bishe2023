@@ -1,5 +1,5 @@
 <template>
-    <el-menu :default-openeds="['1', '3']" style="min-height: 100%; overflow-x: hidden "
+    <el-menu :default-openeds="['1', '3']" style="min-height: 100vh; overflow-x: hidden; width: 100%"
              background-color="rgb(48, 65, 86)"
              text-color="#fff"
              active-text-color="#ffd04b"
@@ -61,6 +61,20 @@ export default {
     }
     .el-submenu__title:hover {
         background-color: rgb(38, 52, 69) !important;
+    }
+
+    ::-webkit-scrollbar {
+        width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+        background: rgb(48, 65, 86);
+    }
+    ::-webkit-scrollbar-thumb {
+        background: rgb(38, 52, 69);
+        border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background: rgb(28, 42, 59);
     }
 
 </style>

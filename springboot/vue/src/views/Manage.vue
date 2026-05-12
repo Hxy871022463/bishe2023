@@ -1,11 +1,12 @@
 <template>
   <el-container style="min-height: 100vh">
 
-      <el-aside :width="sideWidth + 'px'" style="background-color: rgb(238, 241, 246); box-shadow: 2px 0 6px rgba(0 21 41 / 35%);">
+      <el-aside :width="sideWidth + 'px'" 
+                style="background-color: rgb(238, 241, 246); box-shadow: 2px 0 6px rgba(0 21 41 / 35%); position: fixed; left: 0; top: 0; bottom: 0; z-index: 1000; overflow-y: auto;">
         <Aside :isCollapse="isCollapse" :logoTextShow="logoTextShow" />
       </el-aside>
 
-      <el-container>
+      <el-container :style="{ marginLeft: sideWidth + 'px' }">
         <el-header style="border-bottom: 1px solid #ccc;">
           <Header :collapseBtnClass="collapseBtnClass" :collapse="collapse" :user="user" />
         </el-header>

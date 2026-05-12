@@ -7,6 +7,7 @@ import com.example.springboot.entity.User;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
+import java.util.Map;
 
 public interface CourseMapper extends BaseMapper<Course> {
 
@@ -33,4 +34,10 @@ public interface CourseMapper extends BaseMapper<Course> {
     Integer sumScoreByStudentId(@Param("studentId") Integer studentId);
 
     Integer selectStudentIdByScId(@Param("scId") Integer scId);
+
+    List<Course> findHotCourses();
+
+    List<Map<String, Object>> findRateDistribution(@Param("courseId") Integer courseId);
+
+    List<Map<String, Object>> findCourseSaturation();
 }
