@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.springboot.mapper.CourseMapper">
+
+    <delete id="deleteStudentCourse">
+        delete from student_course where student_id = #{studentId} and course_id = #{courseId}
+    </delete>
+    <delete id="deleteRecordById">
+        delete from student_course
+        where id = #{id}
+    </delete>
+
+    <insert id="setStudentCourse">
+        insert into student_course(student_id, course_id) values(#{studentId}, #{courseId})
+    </insert>
+
+    <select id="countStudentCourse" resultType="java.lang.Integer">
+        select count(*) from student_course
+        <where>
+            <if test="studentId != null">
+                and student_id = #{studentId}
+            </if>
+            <if test="courseId != null">
+                and course_id = #{courseId}
+            </if>
+        </where>
+    </select>
+
+    <select id="findPage" resultType="com.example.springboot.entity.Course">
+        select course.*, sys_user.nickname as teacher
+        from course
+        left join sys_user
+        on course.teacher_id = sys_user.id
+        <where>
+            <if test="name != null and name != ''">
+                and name like concat('%', #{name},'%')
+            </if>
+        </where>
+    </select>
+
+    <update id="incrementEnrolled">
+        update course set enrolled = enrolled + 1
+        where id = #{courseId} and (capacity is null or enrolled &lt; capacity)
+    </update>
+
+    <update id="decrementEnrolled">
+        update course set enrolled = enrolled - 1
+        where id = #{courseId} and enrolled > 0
+    </update>
+
+    <select id="selectCourseByScId" resultType="com.example.springboot.entity.Course">
+        select course.* from student_course
+        left join course on student_course.course_id = course.id
+        where student_course.id = #{scId}
+    </select>
+
+    <select id="findStudentPage" resultType="com.example.springboot.entity.User" >
+        select sys_user.username, sys_user.nickname, sys_user.email, sys_user.phone from course
+        left join student_course
+        on course.id = student_course.course_id
+        left join sys_user
+        on student_course.student_id = sys_user.id
+        where course.id = #{courseId}
+    </select>
+    <select id="getCourseListByStudentId" resultType="com.example.springboot.entity.Course">
+        select course.*, sys_user.nickname as teacher, student_course.id as scId from student_course
+        left join course
+        on student_course.course_id = course.id
+        left join sys_user
+        on course.teacher_id = sys_user.id
+        where student_course.student_id = #{studentId}
+    </select>
+
+    <select id="sumScoreByStudentId" resultType="java.lang.Integer">
+        select sum(course.score) from student_course
+        left join course on student_course.course_id = course.id
+        where student_course.student_id = #{studentId}
+    </select>
+
+    <select id="selectStudentIdByScId" resultType="java.lang.Integer">
+        select student_id from student_course
+        where id = #{scId}
+    </select>
+
+    <select id="findHotCourses" resultType="com.example.springboot.entity.Course">
+        select course.*, sys_user.nickname as teacher 
+        from course
+        left join sys_user on course.teacher_id = sys_user.id
+        order by course.enrolled desc
+        limit 10
+    </select>
+
+    <select id="findRateDistribution" resultType="java.util.HashMap">
+        select rate as rate, count(*) as count
+        from sys_comment
+        <where>
+            <if test="courseId != null">
+                and course_id = #{courseId}
+            </if>
+        </where>
+        group by rate
+        order by rate desc
+    </select>
+
+    <select id="findCourseSaturation" resultType="java.util.HashMap">
+        select course.id, course.name, course.enrolled, course.capacity,
+        sys_user.nickname as teacher,
+        case 
+            when course.capacity is null then 0
+            when course.capacity = 0 then 100
+            when course.enrolled is null then 0
+            else round((course.enrolled * 100.0 / course.capacity), 2)
+        end as saturation
+        from course
+        left join sys_user on course.teacher_id = sys_user.id
+        order by saturation desc
+    </select>
+</mapper>

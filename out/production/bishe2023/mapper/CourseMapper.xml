@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.springboot.mapper.CourseMapper">
+
+    <delete id="deleteStudentCourse">
+        delete from student_course where student_id = #{studentId} and course_id = #{courseId}
+    </delete>
+    <delete id="deleteRecordById">
+        delete from student_course
+        where id = #{id}
+    </delete>
+
+    <insert id="setStudentCourse">
+        insert into student_course(student_id, course_id) values(#{studentId}, #{courseId})
+    </insert>
+
+    <select id="findPage" resultType="com.example.springboot.entity.Course">
+        select course.*, sys_user.nickname as teacher  from course
+        left join sys_user
+        on course.teacher_id = sys_user.id
+        <where>
+            <if test="name != null and name != ''">
+                and name like concat('%', #{name},'%')
+            </if>
+        </where>
+    </select>
+    <select id="findStudentPage" resultType="com.example.springboot.entity.User" >
+        select sys_user.username, sys_user.nickname, sys_user.email, sys_user.phone from course
+        left join student_course
+        on course.id = student_course.course_id
+        left join sys_user
+        on student_course.student_id = sys_user.id
+        where course.id = #{courseId}
+    </select>
+    <select id="getCourseListByStudentId" resultType="com.example.springboot.entity.Course">
+        select course.*, sys_user.nickname as teacher, student_course.id as scId from student_course
+        left join course
+        on student_course.course_id = course.id
+        left join sys_user
+        on course.teacher_id = sys_user.id
+        where student_course.student_id = #{studentId}
+    </select>
+</mapper>
